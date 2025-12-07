@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Items Dashboard</title>
+<style>
+  body {
+    font-family: 'Segoe UI', sans-serif;
+    background: #f0f2f5;
+    margin: 0;
+    padding: 0;
+  }
+
+  h1 {
+    text-align: center;
+    color: #222;
+    margin: 30px 0 10px;
+    font-size: 36px;
+  }
+
+  /* Form container */
+  .form-container {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-bottom: 40px;
+  }
+
+  form {
+    background: #fff;
+    padding: 20px 25px;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+
+  input[type="text"], input[type="number"] {
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    font-size: 16px;
+  }
+
+  button {
+    padding: 10px 15px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-weight: bold;
+    transition: 0.2s;
+  }
+
+  button[type="submit"] {
+    background: #007bff;
+    color: #fff;
+  }
+
+  button[type="submit"]:hover {
+    background: #0056b3;
+  }
+
+  /* Items grid */
+  .items-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 25px;
+    max-width: 1200px;
+    margin: 0 auto 50px;
+    padding: 0 20px;
+  }
+
+  .card {
+    background: #fff;
+    border-radius: 20px;
+    padding: 20px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+    transition: transform 0.3s, box-shadow 0.3s;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start; 
+  }
+
+  .card:hover {
+    transform: translateY(-7px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+  }
+
+  .card h2 {
+    font-size: 22px;
+    margin-bottom: 10px;
+    color: #333;
+  }
+
+  .card p {
+    font-size: 18px;
+    margin-bottom: 15px;
+    color: #555;
+  }
+
+  .actions {
+    display: flex;
+    justify-content: space-around;
+    margin-top: auto;
+  }
+
+  .edit-btn, .delete-btn {
+    width: 45px;
+    height: 45px;
+    border-radius: 12px;
+    font-size: 20px;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border: none;
+    transition: 0.2s;
+  }
+
+  .edit-btn {
+    background: #28a745;
+  }
+
+  .edit-btn:hover {
+    background: #218838;
+  }
+
+  .delete-btn {
+    background: #dc3545;
+  }
+
+  .delete-btn:hover {
+    background: #c82333;
+  }
+
+  /* Overlay for edit form */
+  #overlay {
+    display: none;
+    position: fixed;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    background: rgba(0,0,0,0.5);
+    z-index: 999;
+  }
+
+  /* Edit Form Modal */
+  #editForm {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%,-50%);
+    background: #fff;
+    padding: 25px 30px;
+    border-radius: 12px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+    z-index: 1000;
+  }
+
+  #editForm h2 {
+    margin-top: 0;
+  }
+
+  #editForm button {
+    margin-top: 10px;
+    padding: 8px 12px;
+    border-radius: 8px;
+  }
+
+  #editForm .cancel-btn {
+    background: #777;
+    color: white;
+  }
+
+  @media (max-width: 500px) {
+    form {
+      flex-direction: column;
+    }
+    input[type="text"], input[type="number"], button {
+      width: 100%;
+    }
+  }
+</style>
+</head>
+<body>
+
+<h1>Items Dashboard</h1>
+
+<div class="form-container">
+  <form action="/add" method="POST">
+    <input type="text" name="name" placeholder="Item name" required />
+    <input type="number" name="price" placeholder="Price" required />
+    <button type="submit">Add</button>
+  </form>
+
+  <form action="/search" method="GET">
+    <input type="text" name="q" placeholder="Search item..." />
+    <button type="submit">Search</button>
+  </form>
+</div>
+
+<div class="items-container">
+  <% if (items.length > 0) { %>
+    <% items.forEach(item => { %>
+      <div class="card">
+        <h2><%= item.name %></h2>
+        <p>$<%= item.price %></p>
+        <div class="actions">
+          <button class="edit-btn" onclick="showEditForm('<%= item._id %>', '<%= item.name %>', <%= item.price %>)">✏️</button>
+          <form action="/delete/<%= item._id %>" method="GET" style="display:inline;">
+            <button type="submit" class="delete-btn">🗑</button>
+          </form>
+        </div>
+      </div>
+    <% }) %>
+  <% } else { %>
+    <p style="text-align:center; color:#666;">No items found.</p>
+  <% } %>
+</div>
+
+<div id="overlay" onclick="closeEditForm()"></div>
+
+<div id="editForm">
+  <h2>Edit Item</h2>
+  <form id="editItemForm" method="POST">
+    <input type="text" name="name" id="editName" required />
+    <input type="number" name="price" id="editPrice" required />
+    <br/>
+    <button type="submit">Update</button>
+    <button type="button" class="cancel-btn" onclick="closeEditForm()">Cancel</button>
+  </form>
+</div>
+
+<script>
+function showEditForm(id, name, price) {
+  document.getElementById('editForm').style.display = 'block';
+  document.getElementById('overlay').style.display = 'block';
+  document.getElementById('editName').value = name;
+  document.getElementById('editPrice').value = price;
+  document.getElementById('editItemForm').action = '/edit/' + id;
+}
+
+function closeEditForm() {
+  document.getElementById('editForm').style.display = 'none';
+  document.getElementById('overlay').style.display = 'none';
+}
+</script>
+
+</body>
+</html>
